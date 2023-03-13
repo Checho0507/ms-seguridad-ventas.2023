@@ -12,16 +12,18 @@ import {
   getModelSchemaRef, param, patch, post, put, requestBody,
   response
 } from '@loopback/rest';
-import {Usuario} from '../models';
-import {UsuarioRepository} from '../repositories';
+import {Credenciales, Login, Usuario} from '../models';
+import {LoginRepository, UsuarioRepository} from '../repositories';
 import {SeguridadService} from '../services';
 
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
-    public usuarioRepository: UsuarioRepository,
+    public repositorioUsuario: UsuarioRepository,
     @service(SeguridadService)
-    public servicioSeguridad: SeguridadService
+    public servicioSeguridad: SeguridadService,
+    @repository(LoginRepository)
+    public repositorioLogin: LoginRepository
   ) { }
 
   @post('/usuario')
@@ -43,13 +45,13 @@ export class UsuarioController {
     usuario: Omit<Usuario, '_id'>,
   ): Promise<Usuario> {
     //Crear la clave
-    const clave = this.servicioSeguridad.crearClave();
+    const clave = this.servicioSeguridad.crearTextoAleatorio(10);
     //Cifrar la clave
-    const claveCifrada = this.servicioSeguridad.cifrarClave(clave);
+    const claveCifrada = this.servicioSeguridad.cifrarTexo(clave);
     //Asignar clave cifrada a un usuario
     usuario.clave = claveCifrada;
     //Enviar correo
-    return this.usuarioRepository.create(usuario);
+    return this.repositorioUsuario.create(usuario);
   }
 
   @get('/usuario/count')
@@ -60,7 +62,7 @@ export class UsuarioController {
   async count(
     @param.where(Usuario) where?: Where<Usuario>,
   ): Promise<Count> {
-    return this.usuarioRepository.count(where);
+    return this.repositorioUsuario.count(where);
   }
 
   @get('/usuario')
@@ -78,7 +80,7 @@ export class UsuarioController {
   async find(
     @param.filter(Usuario) filter?: Filter<Usuario>,
   ): Promise<Usuario[]> {
-    return this.usuarioRepository.find(filter);
+    return this.repositorioUsuario.find(filter);
   }
 
   @patch('/usuario')
@@ -97,7 +99,7 @@ export class UsuarioController {
     usuario: Usuario,
     @param.where(Usuario) where?: Where<Usuario>,
   ): Promise<Count> {
-    return this.usuarioRepository.updateAll(usuario, where);
+    return this.repositorioUsuario.updateAll(usuario, where);
   }
 
   @get('/usuario/{id}')
@@ -113,7 +115,7 @@ export class UsuarioController {
     @param.path.string('id') id: string,
     @param.filter(Usuario, {exclude: 'where'}) filter?: FilterExcludingWhere<Usuario>
   ): Promise<Usuario> {
-    return this.usuarioRepository.findById(id, filter);
+    return this.repositorioUsuario.findById(id, filter);
   }
 
   @patch('/usuario/{id}')
@@ -131,7 +133,7 @@ export class UsuarioController {
     })
     usuario: Usuario,
   ): Promise<void> {
-    await this.usuarioRepository.updateById(id, usuario);
+    await this.repositorioUsuario.updateById(id, usuario);
   }
 
   @put('/usuario/{id}')
@@ -142,7 +144,7 @@ export class UsuarioController {
     @param.path.string('id') id: string,
     @requestBody() usuario: Usuario,
   ): Promise<void> {
-    await this.usuarioRepository.replaceById(id, usuario);
+    await this.repositorioUsuario.replaceById(id, usuario);
   }
 
   @del('/usuario/{id}')
@@ -150,6 +152,37 @@ export class UsuarioController {
     description: 'Usuario DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.usuarioRepository.deleteById(id);
+    await this.repositorioUsuario.deleteById(id);
+  }
+
+  /**
+   * Métodos personalizados para la API
+   */
+
+  @post('/identificar-usuario')
+  @response(200, {
+    description: "Identificar un usuario por correo y clave",
+    content: {'application/json': {schema: getModelSchemaRef(Usuario)}}
+  })
+  async identificarUsuario(
+    @requestBody({
+      content: {'application/json': {schema: getModelSchemaRef(Credenciales)}}
+    })
+    credenciales: Credenciales
+  ) {
+    const usuario = await this.servicioSeguridad.identificarUsuario(credenciales);
+    if (usuario) {
+      const codigo2FA = this.servicioSeguridad.crearTextoAleatorio(5);
+      const login: Login = new Login();
+      login.usuarioId = usuario._id!;
+      login.codigo2FA = codigo2FA;
+      login.estadoCodigo2FA = false;
+      login.token = "";
+      login.estadoToken = false;
+      this.repositorioLogin.create(login);
+      // Notificar al usuario via correo electrónico
+      return usuario;
+    }
+    return null;
   }
 }
