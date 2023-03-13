@@ -179,7 +179,7 @@ export class UsuarioController {
       login.estadoCodigo2FA = false;
       login.token = "";
       login.estadoToken = false;
-      this.repositorioLogin.create(login);
+      await this.repositorioLogin.create(login);
       // Notificar al usuario via correo electrónico
       return usuario;
     }
