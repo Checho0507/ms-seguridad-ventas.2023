@@ -9,10 +9,10 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, patch, post, put, requestBody,
+  getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
   response
 } from '@loopback/rest';
-import {Credenciales, Login, Usuario} from '../models';
+import {Credenciales, FactorDeAutenticacionPorCodigo, Login, Usuario} from '../models';
 import {LoginRepository, UsuarioRepository} from '../repositories';
 import {SeguridadService} from '../services';
 
@@ -169,7 +169,7 @@ export class UsuarioController {
       content: {'application/json': {schema: getModelSchemaRef(Credenciales)}}
     })
     credenciales: Credenciales
-  ) {
+  ): Promise<object> {
     const usuario = await this.servicioSeguridad.identificarUsuario(credenciales);
     if (usuario) {
       const codigo2FA = this.servicioSeguridad.crearTextoAleatorio(5);
@@ -183,6 +183,30 @@ export class UsuarioController {
       // Notificar al usuario via correo electrónico
       return usuario;
     }
-    return null;
+    return new HttpErrors[401]("Credenciales incorrectas");
+  }
+
+  @post('/verificar-2FA')
+  @response(200, {
+    description: "Validar un código de 2FA"
+  })
+  async verificarCodigo2FA(
+    @requestBody({
+      content: {'application/json': {schema: getModelSchemaRef(FactorDeAutenticacionPorCodigo)}}
+    })
+    credenciales: FactorDeAutenticacionPorCodigo
+  ): Promise<object> {
+    const usuario = await this.servicioSeguridad.validarCodigo2FA(credenciales);
+    if (usuario) {
+      const token = this.servicioSeguridad.crearToken(usuario);
+      if (usuario) {
+
+        return {
+          user: usuario,
+          token: token
+        };
+      }
+    }
+    return new HttpErrors[401]("Código 2FA inválido para el usuario definido");
   }
 }
