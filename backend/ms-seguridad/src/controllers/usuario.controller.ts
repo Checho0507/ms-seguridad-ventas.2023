@@ -180,6 +180,7 @@ export class UsuarioController {
       login.token = "";
       login.estadoToken = false;
       await this.repositorioLogin.create(login);
+      usuario.clave = "";
       // Notificar al usuario via correo electrónico
       return usuario;
     }
@@ -200,7 +201,19 @@ export class UsuarioController {
     if (usuario) {
       const token = this.servicioSeguridad.crearToken(usuario);
       if (usuario) {
-
+        usuario.clave = "";
+        try {
+          await this.repositorioUsuario.logins(usuario._id).patch(
+            {
+              estadoCodigo2FA: true,
+              token: token
+            }, {
+            estadoCodigo2FA: false
+          }
+          );
+        } catch (error) {
+          console.log("No se ha almacenado el cambio de estado de token en la base de datos")
+        }
         return {
           user: usuario,
           token: token
