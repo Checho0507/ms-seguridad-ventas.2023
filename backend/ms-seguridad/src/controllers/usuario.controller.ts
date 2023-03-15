@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication';
 import {service} from '@loopback/core';
 import {
   Count,
@@ -65,6 +66,7 @@ export class UsuarioController {
     return this.repositorioUsuario.count(where);
   }
 
+  @authenticate("auth")
   @get('/usuario')
   @response(200, {
     description: 'Array of Usuario model instances',
