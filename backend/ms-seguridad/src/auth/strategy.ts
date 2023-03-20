@@ -14,7 +14,7 @@ export class AuthStrategy implements AuthenticationStrategy {
     @service(SeguridadService)
     private servicioSeguridad: SeguridadService,
     @inject(AuthenticationBindings.METADATA)
-    private metadata: AuthenticationMetadata,
+    private metadata: AuthenticationMetadata[],
     @repository(RolMenuRepository)
     private repositorioRolMenu: RolMenuRepository
   ) { }
@@ -28,8 +28,8 @@ export class AuthStrategy implements AuthenticationStrategy {
     const token = parseBearerToken(request);
     if (token) {
       const idRol = this.servicioSeguridad.obtenerRolDesdeToken(token);
-      const idMenu: string = this.metadata.options![0];
-      const accion: string = this.metadata.options![1];
+      const idMenu: string = this.metadata[0].options![0];
+      const accion: string = this.metadata[0].options![1];
 
       const permiso = await this.repositorioRolMenu.findOne({
         where: {
