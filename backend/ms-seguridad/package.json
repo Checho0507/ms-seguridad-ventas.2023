@@ -41,7 +41,7 @@
     "url": ""
   },
   "author": "Checho <checho.mlj@gmail.com>",
-  "license": "",
+  "license": "ISC",
   "files": [
     "README.md",
     "dist",
