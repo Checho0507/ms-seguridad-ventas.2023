@@ -9,6 +9,7 @@ import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
+import {MysqlDataSource} from './datasources/mysql.datasource';
 
 export {ApplicationConfig};
 
@@ -17,6 +18,8 @@ export class App extends BootMixin(
 ) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
+
+    this.dataSource(MysqlDataSource);
 
     // Set up the custom sequence
     this.sequence(MySequence);
