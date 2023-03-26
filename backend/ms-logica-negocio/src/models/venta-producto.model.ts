@@ -12,7 +12,7 @@ import {Entity, model, property} from '@loopback/repository';
       },
       fk_venta_producto_idVenta: {
         name: "fk_venta_producto_idVenta",
-        entity: "venta",
+        entity: "Venta",
         entityKey: "id",
         foreignKey: "ventaId"
       }
@@ -45,9 +45,9 @@ export class VentaProducto extends Entity {
   productoId?: number;
 
   @property({
-    type: 'string',
+    type: 'number',
   })
-  ventaId?: string;
+  ventaId?: number;
 
   constructor(data?: Partial<VentaProducto>) {
     super(data);

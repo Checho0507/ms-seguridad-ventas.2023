@@ -62,6 +62,7 @@
     "mysql": "^2.18.1",
     "mysql-client": "^0.3.0",
     "mysql2": "^3.2.0",
+    "parse-bearer-token": "^1.0.1",
     "tslib": "^2.0.0"
   },
   "devDependencies": {

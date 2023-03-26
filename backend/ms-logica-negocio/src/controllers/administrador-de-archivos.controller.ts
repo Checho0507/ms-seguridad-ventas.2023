@@ -1,25 +1,21 @@
+import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
-import{
+import {
   get, HttpErrors, oas, param, post, Request, requestBody, Response, RestBindings
 } from '@loopback/rest';
-import multer from 'multer';
-import path, { resolve } from 'path';
-import { promisify } from 'util';
-import {ConfiguracionGeneral} from '../config/configuracion.general';
 import fs from 'fs';
-import { request } from 'http';
-import { authenticate } from '@loopback/authentication';
-import { type } from 'os';
-import { __await } from 'tslib';
-import { response } from '@loopback/openapi-v3';
+import multer from 'multer';
+import path from 'path';
+import {promisify} from 'util';
+import {ConfiguracionGeneral} from '../config/configuracion.general';
 
 const readdir = promisify(fs.readdir);
 
 export class AdministradorDeArchivosController {
-  constructor() {}
+  constructor() { }
 
-  @authenticate('admin')
-  @post('/cargar-archivo-producto',{
+  @authenticate('auth')
+  @post('/cargar-archivo-producto', {
     responses: {
       200: {
         content: {
@@ -36,7 +32,7 @@ export class AdministradorDeArchivosController {
   async CargarArchivoProducto(
     @inject(RestBindings.Http.RESPONSE) response: Response,
     @requestBody.file() request: Request
-  ): Promise <object | false> {
+  ): Promise<object | false> {
     const filePath = path.join(__dirname, ConfiguracionGeneral.carpetaArchivosProductos);
     let res = await this.StoreFileToPath(
       filePath,
@@ -47,7 +43,7 @@ export class AdministradorDeArchivosController {
     );
     if (res) {
       const filename = response.req?.file?.filename;
-      if (filename){
+      if (filename) {
         return {file: filename};
       }
     }
@@ -56,8 +52,8 @@ export class AdministradorDeArchivosController {
 
   /**
    * Return a config for multer storage
-   * @param path 
-   * @returns 
+   * @param path
+   * @returns
    */
 
   private GetMulterStorageConfig(path: string) {
@@ -66,7 +62,7 @@ export class AdministradorDeArchivosController {
       destination: function (req, file, cb) {
         cb(null, path);
       },
-      filename:function (req, file, cb) {
+      filename: function (req, file, cb) {
         filename = `${Date.now()}-${file.originalname}`;
         cb(null, filename);
       }
@@ -80,12 +76,12 @@ export class AdministradorDeArchivosController {
     request: Request,
     response: Response,
     acceptedExt: string[]
-  ): Promise <object> {
+  ): Promise<object> {
     return new Promise<object>((resolve, reject) => {
       const storage = this.GetMulterStorageConfig(storePath);
       const upload = multer({
         storage: storage,
-        fileFilter: function ( req, file, callback) {
+        fileFilter: function (req, file, callback) {
           var ext = path.extname(file.originalname).toUpperCase();
           if (acceptedExt.includes(ext)) {
             return callback(null, true);
@@ -94,7 +90,7 @@ export class AdministradorDeArchivosController {
             new HttpErrors[400]('This format file is not supported')
           );
         },
-        limits: {    }
+        limits: {}
       }).single(fieldname);
       upload(request, response, (err: any) => {
         if (err) {
@@ -107,7 +103,7 @@ export class AdministradorDeArchivosController {
 
   // Descarga de archivos
 
-  @get('/archivos/{type}',{
+  @get('/archivos/{type}', {
     responses: {
       200: {
         content: {
@@ -139,11 +135,11 @@ export class AdministradorDeArchivosController {
   ) {
     const folder = this.GetFolderPathByType(type);
     const file = this.validateFileName(folder, fileName);
-    response.download(file,fileName);
+    response.download(file, fileName);
     return response;
   }
 
-  private GetFolderPathByType(type: number){
+  private GetFolderPathByType(type: number) {
     let filePath = '';
     switch (type) {
       case 1:
