@@ -207,7 +207,8 @@ export class UsuarioController {
     })
     datos: PermisosRolMenu
   ): Promise<UserProfile | undefined> {
-    return this.servicioAuth.verificarPermisoDeUsuarioPorRol(datos.idRol, datos.idMenu, datos.accion);
+    let idRol = this.servicioSeguridad.obtenerRolDesdeToken(datos.token)
+    return this.servicioAuth.verificarPermisoDeUsuarioPorRol(idRol, datos.idMenu, datos.accion);
   }
 
   @post('/verificar-2FA')
